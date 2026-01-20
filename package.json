@@ -11,8 +11,10 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "express-basic-auth": "^1.2.1",
-    "express-session": "^1.18.2"
+    "express-session": "^1.18.2",
+    "jsonwebtoken": "^9.0.3"
   }
 }

@@ -1,0 +1,17 @@
+export default function LoginHandler(req, res) {
+    if (req.session.userid) {
+        return res.redirect('/');
+    }
+
+    res.setHeader('Content-Type', 'text/HTML');
+    res.write(`
+        <h1>Login</h1>
+        <form method="post" action="/process-login">
+            <input type="text" name="username" placeholder="Username" /> <br>
+            <input type="password" name="password" placeholder="Password" /> <br>            
+            <input type="submit">Login</input>
+        </form>
+    `);
+
+    res.end();
+};

@@ -1,0 +1,93 @@
+import express from "express";
+import dotenv from "dotenv";
+
+const app = express();
+dotenv.config();
+
+app.use(express.json());
+
+const port = process.env.PORT || 3000;
+
+const users = [
+    {
+        id: 1, name: "John", refresh: null
+    }, {
+        id: 2, name: "Medb", refresh: null
+    },
+    {
+        id: 3, name: "Carmille", refresh: null
+    },
+    {
+        id: 4, name: "Tom", refresh: null
+    }
+]
+
+function jwtGenerate(user) {
+    const accessToken = jwt.sign(
+        { name: user.name, id: user.id },
+        process.env.ACCESS_TOKEN_SECRET,
+        { expiresIn: "3m", algorithm: "HS256" },
+    )
+
+    return accessToken;
+}
+
+function jwtRefreshTokenGenerate(user) {
+    const refreshToken = jwt.sign(
+        { name: user.name, id: user.id },
+        process.env.REFRESH_TOKEN_SECRET,
+        { expiresIn: "1d", algorithm: "HS256" },
+    )
+
+    return refreshToken;
+}
+
+function jwtValidate(req, res, next) {
+    try {
+        if (!req.headers["authorization"])
+            return res.sendStatus(401);
+
+        const token = req.headers["authorization"].replace("Bearer ", "");
+
+        jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+            if (err)
+                throw new Error(err);
+        })
+
+        next();
+    } catch (err) {
+        return res.status(403)
+    }
+}
+
+app.get("/", (req, res) => {
+    res.send("Hello from JWT token based authentication!")
+});
+
+app.post("/auth/login", (req, res) => {
+    const { name } = req.body;
+
+    const user = users.findIndex((e) => e.name === name);
+
+    if (!name || user < 0) {
+        return res.send(400);
+    }
+
+    const accessToken = jwtGenerate(users[user]);
+    const refreshToken = jwtRefreshTokenGenerate(users[user]);
+
+    users[user].refresh = refreshToken;
+
+    res.json({
+        accessToken,
+        refreshToken,
+    });
+});
+
+app.get("/", jwtValidate, (req, res) => {
+    res.send("Hello from JWT validate")
+});
+
+app.listen(port, () => {
+    console.log(`Server running on http://localhost:${port}`);
+});

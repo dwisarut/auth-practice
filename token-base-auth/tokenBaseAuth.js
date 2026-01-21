@@ -1,5 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
+import jwt from "jsonwebtoken";
 
 const app = express();
 dotenv.config();
@@ -42,23 +43,27 @@ function jwtRefreshTokenGenerate(user) {
     return refreshToken;
 }
 
-function jwtValidate(req, res, next) {
+async function jwtValidate(req, res, next) {
     try {
         if (!req.headers["authorization"])
             return res.sendStatus(401);
 
-        const token = req.headers["authorization"].replace("Bearer ", "");
+        const token = await req.headers["authorization"].replace("Bearer ", "");
 
         jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
             if (err)
                 throw new Error(err);
         })
 
-        next();
+        await next();
     } catch (err) {
-        return res.status(403)
+        return res.status(403).json();
     }
 }
+
+app.get("/", jwtValidate, (req, res) => {
+    res.send("Access granted, welcome!")
+});
 
 app.get("/", (req, res) => {
     res.send("Hello from JWT token based authentication!")
@@ -82,10 +87,6 @@ app.post("/auth/login", (req, res) => {
         accessToken,
         refreshToken,
     });
-});
-
-app.get("/", jwtValidate, (req, res) => {
-    res.send("Hello from JWT validate")
 });
 
 app.listen(port, () => {

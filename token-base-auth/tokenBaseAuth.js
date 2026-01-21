@@ -61,6 +61,29 @@ async function jwtValidate(req, res, next) {
     }
 }
 
+async function jwtRefreshTokenValidate(req, res, next) {
+    try {
+        if (!req.headers["authorization"])
+            return res.sendStatus(401);
+
+        const token = await req.headers["authorization"].replace("Bearer ", "");
+
+        jwt.verify(token, process.env.REFRESH_TOKEN_SECRET, (err, decoded) => {
+            if (err)
+                throw new Error(err);
+
+            req.user = decoded;
+            req.user.token = token;
+            delete req.user.exp;
+            delete req.user.iat;
+        });
+
+        await next();
+    } catch (err) {
+        return res.status(403).json();
+    }
+}
+
 app.get("/", jwtValidate, (req, res) => {
     res.send("Access granted, welcome!")
 });

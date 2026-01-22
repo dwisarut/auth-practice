@@ -27,7 +27,7 @@ function jwtGenerate(user) {
     const accessToken = jwt.sign(
         { name: user.name, id: user.id },
         process.env.ACCESS_TOKEN_SECRET,
-        { expiresIn: "3m", algorithm: "HS256" },
+        { expiresIn: "1m", algorithm: "HS256" },
     )
 
     return accessToken;
@@ -111,6 +111,24 @@ app.post("/auth/login", (req, res) => {
         refreshToken,
     });
 });
+
+app.post("/auth/refresh", jwtRefreshTokenValidate, (req, res) => {
+    const user = users.find((e) => e.id === req.user.id && e.name === req.user.name)
+
+    const userIndex = users.findIndex((e) => e.refresh === req.user.token)
+
+    if (!user || userIndex < 0)
+        return res.sendStatus(401)
+
+    const accessToken = jwtGenerate(user)
+    const refreshToken = jwtRefreshTokenGenerate(user)
+    users[userIndex].refresh = refreshToken
+
+    return res.json({
+        accessToken,
+        refreshToken
+    })
+})
 
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
